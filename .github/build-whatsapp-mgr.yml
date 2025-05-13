@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '*'
+      - 'whatsapp-mgr/**'
       - '.github/workflows/build-whatsapp-mgr.yml'
   
   # Allow manual triggers

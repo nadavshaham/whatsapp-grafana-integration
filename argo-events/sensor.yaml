@@ -1,0 +1,51 @@
+  apiVersion: argoproj.io/v1alpha1
+  kind: Sensor
+  metadata:
+    name: webhook-whatsapp
+  spec:
+    dependencies:
+      - eventName: example
+        eventSourceName: webhook-whatsapp
+        name: test-dep
+    loggingFields: null
+    template:
+      serviceAccountName: operate-workflow-sa
+    triggers:
+      - template:
+          argoWorkflow:
+            operation: submit
+            parameters:
+              - dest: spec.arguments.parameters.0.value
+                src:
+                  dataKey: body
+                  dependencyName: test-dep
+            source:
+              resource:
+                apiVersion: argoproj.io/v1alpha1
+                kind: Workflow
+                metadata:
+                  generateName: special-trigger-
+                spec:
+                  arguments:
+                    parameters:
+                      - name: message
+                        value: hello world
+                  entrypoint: whatsapp-process
+                  templates:
+                    - name: whatsapp-process
+                      inputs:
+                        parameters:
+                          - name: message
+                      container:
+                        image: 912046776179.dkr.ecr.us-east-1.amazonaws.com/whatsapp-mgr:latest
+                        imagePullPolicy: Always
+                        env:
+                          - name: WHIN_API_KEY
+                            valueFrom:
+                              secretKeyRef:
+                                name: whatsapp-api-keys
+                                key: whin-api-key
+                        args:
+                          - --message
+                          - "{{`{{inputs.parameters.message}}`}}"
+          name: argo-workflow-trigger
